@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon GO Level 50 XP Calculator</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Use Inter font family */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for a subtle background pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0);
+            background-size: 20px 20px;
+            opacity: 0.5;
+            z-index: -1;
+        }
+        /* Custom focus ring color */
+        .focus-ring-poke-blue:focus {
+            --tw-ring-opacity: 1;
+            --tw-ring-color: rgb(59 130 246 / var(--tw-ring-opacity));
+            box-shadow: 0 0 0 3px rgb(59 130 246 / 0.5);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main Calculator Card -->
+    <div class="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-slate-200">
+        <div class="text-center mb-6">
+            <!-- Header with a simple icon -->
+            <div class="flex justify-center items-center mb-3">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path><path d="M12 12h.01"></path></svg>
+            </div>
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-900">Level 50 XP Calculator</h1>
+            <p class="text-slate-500 mt-1">For Pokémon GO</p>
+        </div>
+
+        <!-- Input Form -->
+        <form id="xp-form" class="space-y-4">
+            <div>
+                <label for="current-level" class="block text-sm font-medium text-slate-600 mb-1">Your Current Level</label>
+                <select id="current-level" class="w-full px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg focus:outline-none focus-ring-poke-blue transition">
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+
+            <div>
+                <label for="current-xp" class="block text-sm font-medium text-slate-600 mb-1">Current XP for this Level</label>
+                <input type="number" id="current-xp" placeholder="e.g., 150000" class="w-full px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg focus:outline-none focus-ring-poke-blue transition">
+            </div>
+
+            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus-ring-poke-blue">
+                Calculate
+            </button>
+        </form>
+        
+        <!-- Message Box for errors or info -->
+        <div id="message-box" class="hidden mt-4 p-3 text-center text-sm rounded-lg"></div>
+
+        <!-- Results Section -->
+        <div id="results" class="hidden mt-6 pt-6 border-t border-slate-200 space-y-4">
+            <div class="bg-indigo-50 p-4 rounded-lg text-center">
+                <p class="text-sm font-medium text-indigo-600">XP Needed for Level 50</p>
+                <p id="remaining-xp" class="text-3xl font-bold text-indigo-800">0</p>
+            </div>
+            <div class="bg-amber-50 p-4 rounded-lg text-center">
+                <p class="text-sm font-medium text-amber-600">Average XP/day until Oct 14, 2025</p>
+                <p id="xp-per-day" class="text-3xl font-bold text-amber-800">0</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DATA ---
+            // Total XP required to REACH each level. Index corresponds to (level - 1).
+            // For example, to reach level 2 (index 1), you need 1,000 total XP.
+            const cumulativeXpByLevel = [
+                0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000,
+                55000, 65000, 75000, 85000, 100000, 120000, 140000, 160000, 185000, 210000,
+                260000, 335000, 435000, 560000, 710000, 900000, 1100000, 1350000, 1650000, 2000000,
+                2500000, 3000000, 3750000, 4750000, 6000000, 7500000, 9500000, 12000000, 15000000, 20000000,
+                26000000, 33500000, 42500000, 53500000, 66500000, 82000000, 100000000, 121000000, 146000000
+            ];
+            const LEVEL_50_TOTAL_XP = 176000000; // Note: The correct total is 176M, not 175M.
+
+            // --- DOM ELEMENTS ---
+            const levelSelect = document.getElementById('current-level');
+            const xpInput = document.getElementById('current-xp');
+            const form = document.getElementById('xp-form');
+            const resultsDiv = document.getElementById('results');
+            const remainingXpEl = document.getElementById('remaining-xp');
+            const xpPerDayEl = document.getElementById('xp-per-day');
+            const messageBox = document.getElementById('message-box');
+
+            // --- INITIALIZATION ---
+            // Populate the level dropdown from 1 to 49
+            for (let i = 1; i < 50; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Level ${i}`;
+                levelSelect.appendChild(option);
+            }
+
+            // --- FUNCTIONS ---
+            /**
+             * Shows a message to the user.
+             * @param {string} message - The text to display.
+             * @param {'error' | 'info'} type - The type of message.
+             */
+            function showMessage(message, type = 'error') {
+                messageBox.textContent = message;
+                messageBox.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-blue-100', 'text-blue-700');
+                if (type === 'error') {
+                    messageBox.classList.add('bg-red-100', 'text-red-700');
+                } else {
+                    messageBox.classList.add('bg-blue-100', 'text-blue-700');
+                }
+                messageBox.classList.remove('hidden');
+            }
+            
+            /**
+             * Hides the message box.
+             */
+            function hideMessage() {
+                 messageBox.classList.add('hidden');
+            }
+
+            /**
+             * Handles the form submission and performs calculations.
+             * @param {Event} e - The form submission event.
+             */
+            function calculateXP(e) {
+                e.preventDefault(); // Prevent page reload
+                hideMessage();
+
+                // 1. Get and validate user inputs
+                const currentLevel = parseInt(levelSelect.value, 10);
+                const currentXpForLevel = parseInt(xpInput.value, 10) || 0;
+
+                if (currentXpForLevel < 0) {
+                    showMessage("XP cannot be negative. Please enter a valid number.");
+                    resultsDiv.classList.add('hidden');
+                    return;
+                }
+                
+                // 2. Calculate total XP
+                // Get the base XP for the start of the user's current level
+                const baseXP = cumulativeXpByLevel[currentLevel - 1];
+                const totalUserXp = baseXP + currentXpForLevel;
+
+                // 3. Calculate remaining XP
+                const remainingXp = LEVEL_50_TOTAL_XP - totalUserXp;
+
+                if (remainingXp <= 0) {
+                    showMessage("Congratulations! You've already reached Level 50 or surpassed the required XP!", "info");
+                    resultsDiv.classList.add('hidden');
+                    return;
+                }
+
+                // 4. Calculate days left until the target date
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Normalize to the start of today
+                const targetDate = new Date('2025-10-14T00:00:00'); // *** UPDATED DATE ***
+                
+                // getTime() returns milliseconds. Divide by ms in a day to get days.
+                const timeDifference = targetDate.getTime() - today.getTime();
+                const daysLeft = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
+
+                // 5. Calculate XP per day
+                let xpPerDay = 0;
+                if (daysLeft > 0) {
+                    xpPerDay = Math.ceil(remainingXp / daysLeft);
+                }
+
+                // 6. Display results
+                remainingXpEl.textContent = remainingXp.toLocaleString();
+                xpPerDayEl.textContent = xpPerDay.toLocaleString();
+                resultsDiv.classList.remove('hidden');
+            }
+
+            // --- EVENT LISTENERS ---
+            form.addEventListener('submit', calculateXP);
+        });
+    </script>
+</body>
+</html>
