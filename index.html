@@ -138,6 +138,10 @@
             const requirementsContainer = document.getElementById('level-requirements-container');
             const luckyEggCheckbox = document.getElementById('lucky-egg-checkbox');
             const bonusXpNote = document.getElementById('bonus-xp-note');
+            const calculateButton = document.querySelector('#xp-form button[type="submit"]'); // Get the button
+            
+            // --- STATE ---
+            let hasCalculatedOnce = false; // To track if a calculation has been run
 
             // --- INITIALIZATION ---
             for (let i = 1; i < 50; i++) {
@@ -194,8 +198,6 @@
                 const baseXP = cumulativeXpByLevel[currentLevel - 1];
                 const totalUserXp = baseXP + currentXpForLevel;
                 
-                // *** UPDATED LOGIC ***
-                // 1. Calculate the true remaining XP without any bonuses.
                 const trueRemainingXp = LEVEL_50_TOTAL_XP - totalUserXp;
 
                 if (trueRemainingXp <= 0) {
@@ -205,14 +207,11 @@
                     return;
                 }
 
-                // 2. Display the true remaining XP in the blue box.
                 remainingXpEl.textContent = trueRemainingXp.toLocaleString();
 
-                // 3. Determine the bonus XP based on the checkbox.
                 const useLuckyEggBonus = luckyEggCheckbox.checked;
                 const bonusXp = useLuckyEggBonus ? RESEARCH_BONUS_XP * 2 : 0;
                 
-                // 4. Calculate the remaining XP for the daily average calculation.
                 const remainingXpForDailyCalc = trueRemainingXp - bonusXp;
 
                 const today = new Date();
@@ -222,9 +221,8 @@
                 const daysLeft = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
 
                 let xpPerDay = 0;
-                // 5. Calculate and display the daily XP average.
                 if (remainingXpForDailyCalc <= 0) {
-                    xpPerDay = 0; // They don't need to grind daily with the bonus.
+                    xpPerDay = 0;
                 } else if (daysLeft > 0) {
                     xpPerDay = Math.ceil(remainingXpForDailyCalc / daysLeft);
                 } else {
@@ -234,7 +232,6 @@
 
                 resultsDiv.classList.remove('hidden');
 
-                // Show or hide the bonus note
                 if (useLuckyEggBonus) {
                     bonusXpNote.classList.remove('hidden');
                 } else {
@@ -242,6 +239,16 @@
                 }
                 
                 displayLevelRequirements(currentLevel);
+                
+                // *** NEW: Set the flag that a calculation has occurred ***
+                hasCalculatedOnce = true;
+            }
+            
+            // *** NEW: Function to update button text ***
+            function updateButtonText() {
+                if (hasCalculatedOnce) {
+                    calculateButton.textContent = 'Re-calculate';
+                }
             }
 
             // --- EVENT LISTENERS ---
@@ -250,6 +257,7 @@
             levelSelect.addEventListener('change', () => {
                 const currentLevel = parseInt(levelSelect.value, 10);
                 displayLevelRequirements(currentLevel);
+                updateButtonText(); // Call update function
             });
 
             xpInput.addEventListener('input', (e) => {
@@ -259,7 +267,11 @@
                 } else {
                     e.target.value = '';
                 }
+                updateButtonText(); // Call update function
             });
+            
+            luckyEggCheckbox.addEventListener('change', updateButtonText); // Call update function
+
         });
     </script>
 </body>
