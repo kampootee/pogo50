@@ -44,7 +44,7 @@
             <div class="text-center mb-6">
                 <!-- Header with a simple icon -->
                 <div class="flex justify-center items-center mb-3">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path><path d="M12 12h.01"></path></svg>
+                     <img src="https://i.imgur.com/JMqp3qy.png" alt="Pokémon GO Logo" class="w-[200px] h-[200px]">
                 </div>
                 <h1 class="text-2xl md:text-3xl font-bold text-slate-900">Level 50 XP Calculator</h1>
                 <p class="text-slate-500 mt-1">For Pokémon GO</p>
@@ -64,7 +64,6 @@
                     <input type="text" id="current-xp" placeholder="e.g., 1,500,000" class="w-full px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg focus:outline-none focus-ring-poke-blue transition">
                 </div>
 
-                <!-- *** NEW: Lucky Egg Checkbox *** -->
                 <div class="flex items-center justify-center pt-2">
                     <input id="lucky-egg-checkbox" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                     <label for="lucky-egg-checkbox" class="ml-2 block text-sm text-slate-600">
@@ -77,22 +76,20 @@
                 </button>
             </form>
             
-            <!-- Message Box for errors or info -->
             <div id="message-box" class="hidden mt-4 p-3 text-center text-sm rounded-lg"></div>
 
             <!-- Results Section -->
             <div id="results" class="hidden mt-6 pt-6 border-t border-slate-200 space-y-4">
                 <div class="bg-indigo-50 p-4 rounded-lg text-center">
-                    <p class="text-sm font-medium text-indigo-600">XP Needed for Level 50</p>
+                    <p class="text-sm font-medium text-indigo-600">Total XP Needed for Level 50</p>
                     <p id="remaining-xp" class="text-3xl font-bold text-indigo-800">0</p>
                 </div>
                 <div class="bg-amber-50 p-4 rounded-lg text-center">
                     <p class="text-sm font-medium text-amber-600">Average XP/day until Oct 14, 2025</p>
                     <p id="xp-per-day" class="text-3xl font-bold text-amber-800">0</p>
                 </div>
-                <!-- *** UPDATED: Note is now hidden by default *** -->
                 <p id="bonus-xp-note" class="hidden text-xs text-slate-500 text-center italic pt-2">
-                    Calculations include the 14,000,000 XP bonus (7M research + Lucky Egg).
+                    Daily XP goal is reduced by 14,000,000 XP (7M research + Lucky Egg).
                 </p>
             </div>
         </div>
@@ -125,7 +122,7 @@
                 45: { xp: "13,000,000", tasks: ["Defeat 100 Team Go Rocket Grunts", "Purify 100 Shadow Pokémon", "Defeat a Team Go Rocket Leader 50 times", "Earn 10 Platinum Medals"], rewards: ["40 Ultra Balls", "40 Max Revives", "1 Elite Fast TM", "2 Rare XL Candy", "2 Incense", "2 Lucky Eggs", "1 Super Incubator", "2 Lure Modules", "Level 45 Hat Avatar Item"] },
                 46: { xp: "15,500,000", tasks: ["Complete 100 Field Research tasks", "Take a snapshot of a Pokémon 7 days in a row", "Make 50 Excellent Throws", "Hatch 30 Eggs"], rewards: ["30 Ultra Balls", "25 Max Potions", "20 Max Revives", "25 Razz Berries", "1 Incubator", "1 Premium Raid Pass", "1 Rare XL Candy"] },
                 47: { xp: "18,000,000", tasks: ["Win 30 raids using a team of unique Pokémon species", "Win a 3-star raid using only Pokémon with 1,500 CP or less", "Power up 3 Pokémon to their max CP", "Earn 20 Platinum Medals"], rewards: ["30 Ultra Balls", "25 Max Potions", "20 Max Revives", "25 Nanab Berries", "1 Incubator", "1 Premium Raid Pass", "1 Rare XL Candy", "Avatar Pose"] },
-                48: { xp: "21,000,000", tasks: ["Receive 20 Souvenirs from your Buddy", "Earn 300 hearts with your Buddy", "Walk 200km with your Buddy", "Walk 25km in a week 8 times"], rewards: ["30 Ultra Balls", "25 Max Potions", "20 Max Revives", "15 Silver Pinap Berries", "1 Incubator", "1 Premium Raid Pass", "1 Rare XL Candy"] },
+                48: { xp: "21,000,000", tasks: ["Receive 20 Souvenirs from your Buddy", "Earn 300 hearts with your Buddy", "Walk 200km with your Buddy", "Walk 25km in a week 2 times"], rewards: ["30 Ultra Balls", "25 Max Potions", "20 Max Revives", "15 Silver Pinap Berries", "1 Incubator", "1 Premium Raid Pass", "1 Rare XL Candy"] },
                 49: { xp: "25,000,000", tasks: ["Make 10 trades with Pokémon caught at least 300km apart", "Obtain 50 Lucky Pokémon in trades", "Send 500 gifts to friends", "Earn 35 Platinum Medals"], rewards: ["30 Ultra Balls", "25 Max Potions", "20 Max Revives", "25 Pinap Berries", "1 Incubator", "1 Premium Raid Pass", "1 Rare XL Candy", "Level 49 Boots Avatar Item"] },
                 50: { xp: "30,000,000", tasks: ["Make 999 Excellent Throws", "Catch a Legendary Pokémon in your next 5 Legendary encounters", "Defeat a Team GO Rocket Leader 3 times using only Pokémon with 2,500 CP or less", "Reach Rank 10 in the Go Battle League"], rewards: ["50 Ultra Balls", "50 Max Potions", "1 Elite Charged TM", "2 Rare XL Candy", "5 Incense", "5 Lucky Eggs", "5 Super Incubators", "5 Lure Modules", "Level 50 Jacket Avatar Item"] }
             };
@@ -139,8 +136,8 @@
             const xpPerDayEl = document.getElementById('xp-per-day');
             const messageBox = document.getElementById('message-box');
             const requirementsContainer = document.getElementById('level-requirements-container');
-            const luckyEggCheckbox = document.getElementById('lucky-egg-checkbox'); // Get checkbox
-            const bonusXpNote = document.getElementById('bonus-xp-note'); // Get note element
+            const luckyEggCheckbox = document.getElementById('lucky-egg-checkbox');
+            const bonusXpNote = document.getElementById('bonus-xp-note');
 
             // --- INITIALIZATION ---
             for (let i = 1; i < 50; i++) {
@@ -197,38 +194,47 @@
                 const baseXP = cumulativeXpByLevel[currentLevel - 1];
                 const totalUserXp = baseXP + currentXpForLevel;
                 
-                // *** UPDATED: Bonus XP is now conditional ***
-                const useLuckyEggBonus = luckyEggCheckbox.checked;
-                const bonusXp = useLuckyEggBonus ? RESEARCH_BONUS_XP * 2 : 0;
-                
-                const remainingXp = LEVEL_50_TOTAL_XP - totalUserXp - bonusXp;
+                // *** UPDATED LOGIC ***
+                // 1. Calculate the true remaining XP without any bonuses.
+                const trueRemainingXp = LEVEL_50_TOTAL_XP - totalUserXp;
 
-                if (remainingXp <= 0) {
-                    showMessage("Congratulations! With the bonus XP, you've already surpassed the Level 50 requirement!", "info");
+                if (trueRemainingXp <= 0) {
+                    showMessage("Congratulations! You've already reached Level 50 or surpassed the required XP!", "info");
                     resultsDiv.classList.add('hidden');
                     requirementsContainer.innerHTML = '';
                     return;
                 }
 
+                // 2. Display the true remaining XP in the blue box.
+                remainingXpEl.textContent = trueRemainingXp.toLocaleString();
+
+                // 3. Determine the bonus XP based on the checkbox.
+                const useLuckyEggBonus = luckyEggCheckbox.checked;
+                const bonusXp = useLuckyEggBonus ? RESEARCH_BONUS_XP * 2 : 0;
+                
+                // 4. Calculate the remaining XP for the daily average calculation.
+                const remainingXpForDailyCalc = trueRemainingXp - bonusXp;
+
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const targetDate = new Date('2025-10-14T00:00:00');
-                
                 const timeDifference = targetDate.getTime() - today.getTime();
                 const daysLeft = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
 
                 let xpPerDay = 0;
-                if (daysLeft > 0) {
-                    xpPerDay = Math.ceil(remainingXp / daysLeft);
+                // 5. Calculate and display the daily XP average.
+                if (remainingXpForDailyCalc <= 0) {
+                    xpPerDay = 0; // They don't need to grind daily with the bonus.
+                } else if (daysLeft > 0) {
+                    xpPerDay = Math.ceil(remainingXpForDailyCalc / daysLeft);
                 } else {
-                    xpPerDay = remainingXp; // If target date is today or in the past
+                    xpPerDay = remainingXpForDailyCalc;
                 }
-
-                remainingXpEl.textContent = remainingXp.toLocaleString();
                 xpPerDayEl.textContent = xpPerDay.toLocaleString();
+
                 resultsDiv.classList.remove('hidden');
 
-                // *** UPDATED: Show or hide the bonus note ***
+                // Show or hide the bonus note
                 if (useLuckyEggBonus) {
                     bonusXpNote.classList.remove('hidden');
                 } else {
