@@ -45,7 +45,7 @@
             <div class="text-center mb-6">
                 <!-- Header with a simple icon -->
                 <div class="flex justify-center items-center mb-3">
-                     <!-- *** NEW: SVG Pokeball Logo *** -->
+                     <!-- SVG Pokeball Logo -->
                      <svg viewBox="0 0 100 100" class="w-24 h-24">
                         <defs>
                             <clipPath id="top-half">
@@ -117,84 +117,11 @@
             <!-- Requirements will be populated by JavaScript -->
         </div>
         
-        <!-- View Counter -->
-        <div id="view-counter" class="mt-6 text-center text-xs text-slate-400 flex items-center justify-center space-x-1">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            <span id="view-count-number">...</span>
-            <span>views</span>
-        </div>
     </div>
 
-    <!-- Firebase Libraries -->
-    <script type="module">
-        // IMPORTANT: These scripts are required for Firebase to work.
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, runTransaction, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            // --- FIREBASE SETUP ---
-            let db, auth;
-            try {
-                // These global variables are provided by the environment.
-                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                setLogLevel('debug');
-
-                // Authenticate the user
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                
-                // Initialize and update the view counter
-                await setupViewCounter(db, appId);
-
-            } catch (error) {
-                console.error("Firebase initialization failed:", error);
-                const viewCountEl = document.getElementById('view-count-number');
-                if(viewCountEl) viewCountEl.textContent = 'N/A';
-            }
-            
-            // --- VIEW COUNTER LOGIC ---
-            async function setupViewCounter(db, appId) {
-                const viewCountEl = document.getElementById('view-count-number');
-                const counterDocRef = doc(db, `artifacts/${appId}/public/data/viewcounts`, "counter");
-
-                try {
-                    // Use a transaction to safely increment the counter
-                    await runTransaction(db, async (transaction) => {
-                        const counterDoc = await transaction.get(counterDocRef);
-                        if (!counterDoc.exists()) {
-                            transaction.set(counterDocRef, { count: 1 });
-                        } else {
-                            const newCount = counterDoc.data().count + 1;
-                            transaction.update(counterDocRef, { count: newCount });
-                        }
-                    });
-
-                    // Listen for real-time updates to the counter
-                    onSnapshot(counterDocRef, (doc) => {
-                        if (doc.exists()) {
-                            viewCountEl.textContent = doc.data().count.toLocaleString();
-                        } else {
-                            viewCountEl.textContent = '1';
-                        }
-                    });
-
-                } catch (e) {
-                    console.error("Transaction failed: ", e);
-                    viewCountEl.textContent = 'Error';
-                }
-            }
-
-
-            // --- CALCULATOR LOGIC (from previous steps) ---
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CALCULATOR LOGIC ---
             const cumulativeXpByLevel = [0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000, 55000, 65000, 75000, 85000, 100000, 120000, 140000, 160000, 185000, 210000, 260000, 335000, 435000, 560000, 710000, 900000, 1100000, 1350000, 1650000, 2000000, 2500000, 3000000, 3750000, 4750000, 6000000, 7500000, 9500000, 12000000, 15000000, 20000000, 26000000, 33500000, 42500000, 53500000, 66500000, 82000000, 100000000, 121000000, 146000000];
             const LEVEL_50_TOTAL_XP = 176000000;
             const RESEARCH_BONUS_XP = 7000000;
