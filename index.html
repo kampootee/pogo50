@@ -38,13 +38,30 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex items-center justify-center min-h-screen p-4">
+    
     <div class="w-full max-w-lg">
         <!-- Main Calculator Card -->
         <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-slate-200">
             <div class="text-center mb-6">
                 <!-- Header with a simple icon -->
                 <div class="flex justify-center items-center mb-3">
-                     <img src="https://i.imgur.com/JMqp3qy.png" alt="Pokémon GO Logo" class="w-[200px] h-[200px]">
+                     <!-- *** NEW: SVG Pokeball Logo *** -->
+                     <svg viewBox="0 0 100 100" class="w-24 h-24">
+                        <defs>
+                            <clipPath id="top-half">
+                                <rect x="0" y="0" width="100" height="50" />
+                            </clipPath>
+                            <clipPath id="bottom-half">
+                                <rect x="0" y="50" width="100" height="50" />
+                            </clipPath>
+                        </defs>
+                        <circle cx="50" cy="50" r="48" fill="none" stroke="black" stroke-width="4" />
+                        <circle cx="50" cy="50" r="48" fill="#ef4444" clip-path="url(#top-half)" />
+                        <circle cx="50" cy="50" r="48" fill="white" clip-path="url(#bottom-half)" />
+                        <line x1="2" y1="50" x2="98" y2="50" stroke="black" stroke-width="5" />
+                        <circle cx="50" cy="50" r="18" fill="white" stroke="black" stroke-width="5" />
+                        <circle cx="50" cy="50" r="10" fill="white" stroke="#a1a1aa" stroke-width="2" />
+                    </svg>
                 </div>
                 <h1 class="text-2xl md:text-3xl font-bold text-slate-900">Level 50 XP Calculator</h1>
                 <p class="text-slate-500 mt-1">For Pokémon GO</p>
@@ -70,6 +87,7 @@
                         Use a Lucky Egg for the 7M research bonus?
                     </label>
                 </div>
+
 
                 <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus-ring-poke-blue">
                     Calculate
@@ -98,22 +116,88 @@
         <div id="level-requirements-container" class="mt-8 space-y-4">
             <!-- Requirements will be populated by JavaScript -->
         </div>
+        
+        <!-- View Counter -->
+        <div id="view-counter" class="mt-6 text-center text-xs text-slate-400 flex items-center justify-center space-x-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <span id="view-count-number">...</span>
+            <span>views</span>
+        </div>
     </div>
 
+    <!-- Firebase Libraries -->
+    <script type="module">
+        // IMPORTANT: These scripts are required for Firebase to work.
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, runTransaction, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- DATA ---
-            const cumulativeXpByLevel = [
-                0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000,
-                55000, 65000, 75000, 85000, 100000, 120000, 140000, 160000, 185000, 210000,
-                260000, 335000, 435000, 560000, 710000, 900000, 1100000, 1350000, 1650000, 2000000,
-                2500000, 3000000, 3750000, 4750000, 6000000, 7500000, 9500000, 12000000, 15000000, 20000000,
-                26000000, 33500000, 42500000, 53500000, 66500000, 82000000, 100000000, 121000000, 146000000
-            ];
+        document.addEventListener('DOMContentLoaded', async () => {
+            // --- FIREBASE SETUP ---
+            let db, auth;
+            try {
+                // These global variables are provided by the environment.
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('debug');
+
+                // Authenticate the user
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                // Initialize and update the view counter
+                await setupViewCounter(db, appId);
+
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                const viewCountEl = document.getElementById('view-count-number');
+                if(viewCountEl) viewCountEl.textContent = 'N/A';
+            }
+            
+            // --- VIEW COUNTER LOGIC ---
+            async function setupViewCounter(db, appId) {
+                const viewCountEl = document.getElementById('view-count-number');
+                const counterDocRef = doc(db, `artifacts/${appId}/public/data/viewcounts`, "counter");
+
+                try {
+                    // Use a transaction to safely increment the counter
+                    await runTransaction(db, async (transaction) => {
+                        const counterDoc = await transaction.get(counterDocRef);
+                        if (!counterDoc.exists()) {
+                            transaction.set(counterDocRef, { count: 1 });
+                        } else {
+                            const newCount = counterDoc.data().count + 1;
+                            transaction.update(counterDocRef, { count: newCount });
+                        }
+                    });
+
+                    // Listen for real-time updates to the counter
+                    onSnapshot(counterDocRef, (doc) => {
+                        if (doc.exists()) {
+                            viewCountEl.textContent = doc.data().count.toLocaleString();
+                        } else {
+                            viewCountEl.textContent = '1';
+                        }
+                    });
+
+                } catch (e) {
+                    console.error("Transaction failed: ", e);
+                    viewCountEl.textContent = 'Error';
+                }
+            }
+
+
+            // --- CALCULATOR LOGIC (from previous steps) ---
+            const cumulativeXpByLevel = [0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000, 55000, 65000, 75000, 85000, 100000, 120000, 140000, 160000, 185000, 210000, 260000, 335000, 435000, 560000, 710000, 900000, 1100000, 1350000, 1650000, 2000000, 2500000, 3000000, 3750000, 4750000, 6000000, 7500000, 9500000, 12000000, 15000000, 20000000, 26000000, 33500000, 42500000, 53500000, 66500000, 82000000, 100000000, 121000000, 146000000];
             const LEVEL_50_TOTAL_XP = 176000000;
-            const RESEARCH_BONUS_XP = 7000000; 
-
+            const RESEARCH_BONUS_XP = 7000000;
             const levelUpData = {
                 41: { xp: "6,000,000", tasks: ["Power up a Legendary Pokémon 20 times", "Win 30 Raids", "Catch 200 Pokémon in a single day", "Earn 5 Gold Medals"], rewards: ["20 Ultra Balls", "20 Max Potions", "20 Max Revives", "20 Razz Berries", "1 Incubator", "1 Premium Raid Pass", "1 Rare XL Candy"] },
                 42: { xp: "7,500,000", tasks: ["Evolve Eevee into each of its unique evolutions", "Use items to evolve Pokémon 15 times", "Make 3 Excellent Throws", "Use 200 Berries to help catch Pokémon"], rewards: ["20 Ultra Balls", "20 Max Potions", "20 Max Revives", "20 Nanab Berries", "1 Incubator", "1 Premium Raid Pass", "1 Rare XL Candy"] },
@@ -126,8 +210,6 @@
                 49: { xp: "25,000,000", tasks: ["Make 10 trades with Pokémon caught at least 300km apart", "Obtain 50 Lucky Pokémon in trades", "Send 500 gifts to friends", "Earn 35 Platinum Medals"], rewards: ["30 Ultra Balls", "25 Max Potions", "20 Max Revives", "25 Pinap Berries", "1 Incubator", "1 Premium Raid Pass", "1 Rare XL Candy", "Level 49 Boots Avatar Item"] },
                 50: { xp: "30,000,000", tasks: ["Make 999 Excellent Throws", "Catch a Legendary Pokémon in your next 5 Legendary encounters", "Defeat a Team GO Rocket Leader 3 times using only Pokémon with 2,500 CP or less", "Reach Rank 10 in the Go Battle League"], rewards: ["50 Ultra Balls", "50 Max Potions", "1 Elite Charged TM", "2 Rare XL Candy", "5 Incense", "5 Lucky Eggs", "5 Super Incubators", "5 Lure Modules", "Level 50 Jacket Avatar Item"] }
             };
-
-            // --- DOM ELEMENTS ---
             const levelSelect = document.getElementById('current-level');
             const xpInput = document.getElementById('current-xp');
             const form = document.getElementById('xp-form');
@@ -138,12 +220,8 @@
             const requirementsContainer = document.getElementById('level-requirements-container');
             const luckyEggCheckbox = document.getElementById('lucky-egg-checkbox');
             const bonusXpNote = document.getElementById('bonus-xp-note');
-            const calculateButton = document.querySelector('#xp-form button[type="submit"]'); // Get the button
-            
-            // --- STATE ---
-            let hasCalculatedOnce = false; // To track if a calculation has been run
-
-            // --- INITIALIZATION ---
+            const calculateButton = document.querySelector('#xp-form button[type="submit"]');
+            let hasCalculatedOnce = false;
             for (let i = 1; i < 50; i++) {
                 const option = document.createElement('option');
                 option.value = i;
@@ -151,23 +229,16 @@
                 levelSelect.appendChild(option);
             }
             displayLevelRequirements(0);
-
-            // --- FUNCTIONS ---
             function showMessage(message, type = 'error') {
                 messageBox.textContent = message;
                 messageBox.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-blue-100', 'text-blue-700');
                 messageBox.classList.add(type === 'error' ? 'bg-red-100' : 'bg-blue-100', type === 'error' ? 'text-red-700' : 'text-blue-700');
                 messageBox.classList.remove('hidden');
             }
-            
-            function hideMessage() {
-                 messageBox.classList.add('hidden');
-            }
-
+            function hideMessage() { messageBox.classList.add('hidden'); }
             function displayLevelRequirements(selectedLevel) {
-                requirementsContainer.innerHTML = ''; 
-                if (selectedLevel < 40) return; 
-                
+                requirementsContainer.innerHTML = '';
+                if (selectedLevel < 40) return;
                 let hasShownHeader = false;
                 for (let level = 41; level <= 50; level++) {
                     if (level > selectedLevel) {
@@ -186,40 +257,30 @@
                     }
                 }
             }
-
             function calculateXP(e) {
-                e.preventDefault(); 
+                e.preventDefault();
                 hideMessage();
-
                 const currentLevel = parseInt(levelSelect.value, 10);
                 const xpString = xpInput.value.replace(/,/g, '');
                 const currentXpForLevel = parseInt(xpString, 10) || 0;
-                
                 const baseXP = cumulativeXpByLevel[currentLevel - 1];
                 const totalUserXp = baseXP + currentXpForLevel;
-                
                 const trueRemainingXp = LEVEL_50_TOTAL_XP - totalUserXp;
-
                 if (trueRemainingXp <= 0) {
                     showMessage("Congratulations! You've already reached Level 50 or surpassed the required XP!", "info");
                     resultsDiv.classList.add('hidden');
                     requirementsContainer.innerHTML = '';
                     return;
                 }
-
                 remainingXpEl.textContent = trueRemainingXp.toLocaleString();
-
                 const useLuckyEggBonus = luckyEggCheckbox.checked;
                 const bonusXp = useLuckyEggBonus ? RESEARCH_BONUS_XP * 2 : 0;
-                
                 const remainingXpForDailyCalc = trueRemainingXp - bonusXp;
-
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const targetDate = new Date('2025-10-14T00:00:00');
                 const timeDifference = targetDate.getTime() - today.getTime();
                 const daysLeft = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
-
                 let xpPerDay = 0;
                 if (remainingXpForDailyCalc <= 0) {
                     xpPerDay = 0;
@@ -229,37 +290,22 @@
                     xpPerDay = remainingXpForDailyCalc;
                 }
                 xpPerDayEl.textContent = xpPerDay.toLocaleString();
-
                 resultsDiv.classList.remove('hidden');
-
                 if (useLuckyEggBonus) {
                     bonusXpNote.classList.remove('hidden');
                 } else {
                     bonusXpNote.classList.add('hidden');
                 }
-                
                 displayLevelRequirements(currentLevel);
-                
-                // *** NEW: Set the flag that a calculation has occurred ***
                 hasCalculatedOnce = true;
             }
-            
-            // *** NEW: Function to update button text ***
-            function updateButtonText() {
-                if (hasCalculatedOnce) {
-                    calculateButton.textContent = 'Re-calculate';
-                }
-            }
-
-            // --- EVENT LISTENERS ---
+            function updateButtonText() { if (hasCalculatedOnce) { calculateButton.textContent = 'Re-calculate'; } }
             form.addEventListener('submit', calculateXP);
-            
             levelSelect.addEventListener('change', () => {
                 const currentLevel = parseInt(levelSelect.value, 10);
                 displayLevelRequirements(currentLevel);
-                updateButtonText(); // Call update function
+                updateButtonText();
             });
-
             xpInput.addEventListener('input', (e) => {
                 let value = e.target.value.replace(/[^0-9]/g, '');
                 if (value) {
@@ -267,11 +313,9 @@
                 } else {
                     e.target.value = '';
                 }
-                updateButtonText(); // Call update function
+                updateButtonText();
             });
-            
-            luckyEggCheckbox.addEventListener('change', updateButtonText); // Call update function
-
+            luckyEggCheckbox.addEventListener('change', updateButtonText);
         });
     </script>
 </body>
